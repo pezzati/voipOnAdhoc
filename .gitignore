@@ -12,3 +12,5 @@ gradle-app.setting
 
 .pcap
 *.pcap
+.idea
+*.idea
