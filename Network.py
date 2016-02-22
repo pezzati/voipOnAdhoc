@@ -1,3 +1,4 @@
+import datetime
 import netifaces
 from socket import *
 import struct
@@ -35,8 +36,19 @@ class Network():
 
 
 class Listener(threading.Thread):
-    def __init__(self, name, port_num):
+    def __init__(self, name, port_num, my_id):
         threading.Thread.__init__(self, name=name)
+        self.node_id = my_id
+
+        self.file_name = 'log/outputs/'
+        self.file_name += str(my_id)
+        self.file_name += '_'
+        time = str(datetime.datetime.now())
+        time = time.split('.')[0]
+        time = time.replace(' ', '_')
+        self.file_name += time
+        self.file_name += '.log'
+
         self.port = port_num
         self.listener_socket = socket(AF_INET, SOCK_DGRAM)
         try:
@@ -46,13 +58,18 @@ class Listener(threading.Thread):
             raise Exception('Cant run Listener for {}'.format(self.port))
 
     def run(self):
+        output_file = open(self.file_name, 'w')
         while True:
             data=self.listener_socket.recv(1024)
             msg=Message()
             msg.build_by_data(data)
-            print(msg.__str__())
+            output_file.write(str(datetime.datetime.now()))
+            output_file.write('\t')
+            output_file.write(msg.__str__())
+            output_file.write('\n')
             if MESSAGE_TYPE[msg.type] == 'Exit':
                 break
             #TODO Message Handler
         self.listener_socket.close()
+        output_file.close()
         print('Listener closed')
