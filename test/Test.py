@@ -24,8 +24,10 @@ cs.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 cs.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 #cs.bind((netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0].get('addr'), 54545))
 
-msg = Message(6524,1,'This is a test\n test2')
+msg = Message(6524,1,'This is a test')
 print(msg.get_packed())
 cs.sendto(msg.get_packed(), (netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0].get('broadcast'), 54545))
-print('This is a test\n test2'.encode())
+msg.type=0
+cs.sendto(msg.get_packed(), (netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0].get('broadcast'), 54545))
+#print('This is a test\n test2'.encode())
 cs.close()

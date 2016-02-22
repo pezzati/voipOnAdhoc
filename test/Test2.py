@@ -4,9 +4,9 @@ import struct
 
 
 s=socket(AF_INET, SOCK_DGRAM)
-s.bind((netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0].get('broadcast'), 54545))
+s.bind((netifaces.ifaddresses('wlan0')[netifaces.AF_INET][0].get('addr'), 54545))
 while True:
-    data= s.recv(1024)
+    data= s.recv(2048)
     print(data)
     header = data[:9]
     msg_type, id_length, msg_length=struct.unpack('!BII', header)
