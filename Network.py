@@ -36,9 +36,10 @@ class Network():
 
 
 class Listener(threading.Thread):
-    def __init__(self, name, port_num, my_id):
+    def __init__(self, name, port_num, my_id, network):
         threading.Thread.__init__(self, name=name)
         self.node_id = my_id
+        self.net = network
 
         self.file_name = 'log/outputs/'
         self.file_name += str(my_id)
@@ -67,9 +68,19 @@ class Listener(threading.Thread):
             output_file.write('\t')
             output_file.write(msg.__str__())
             output_file.write('\n')
-            if MESSAGE_TYPE[msg.type] == 'Exit':
+            #if MESSAGE_TYPE[msg.type] == 'Exit':
+            #    break
+            if self.handle(msg) is None:
                 break
             #TODO Message Handler
         self.listener_socket.close()
         output_file.close()
         print('Listener closed')
+
+    def handle(self, msg):
+        if MESSAGE_TYPE[msg.type] == 'Exit':
+            return None
+        else:
+            if msg.owner_id == self.node_id:
+                return 0
+            self.net.send.broadcast(msg.get_packed())
