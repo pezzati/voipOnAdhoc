@@ -2,11 +2,14 @@ from struct import pack
 import struct
 
 MESSAGE_TYPE = {0: 'Exit', 1: 'Text'}
-
+last_id = 0
 
 class Message():
     def __init__(self, my_id='0', msg_type=0, content=''):
         self.type = msg_type
+        my_id += '_'
+        my_id += str(last_id)
+        last_id += 1
         self.owner_id = str(my_id)
         self.id_len = len(str(my_id))
         self.msg_len = len(str(content))
@@ -35,3 +38,18 @@ class Message():
 
     def __str__(self):
         return '{} message from {}: {}'.format(MESSAGE_TYPE[self.type], self.owner_id, self.payload)
+
+
+class ID_info():
+    def __init__(self, base):
+        self.base_id = base
+
+    def build_id(self, given_id):
+        res = str(given_id)
+        res += '-'
+        res += str(self.base_id)
+        self.base_id += 1
+        return res
+
+    def extract_id(self, given_id):
+        return given_id.split('-')

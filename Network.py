@@ -40,6 +40,7 @@ class Listener(threading.Thread):
         threading.Thread.__init__(self, name=name)
         self.node_id = my_id
         self.net = network
+        self.rec_msgs = []
 
         self.file_name = 'log/outputs/'
         self.file_name += str(my_id)
@@ -81,6 +82,7 @@ class Listener(threading.Thread):
         if MESSAGE_TYPE[msg.type] == 'Exit':
             return None
         else:
-            if msg.owner_id == self.node_id:
+            if msg.owner_id in self.rec_msgs:
                 return 0
+            self.rec_msgs.append(msg.owner_id)
             self.net.send.broadcast(msg.get_packed())
