@@ -60,29 +60,34 @@ class Listener(threading.Thread):
             raise Exception('Cant run Listener for {}'.format(self.port))
 
     def run(self):
-        output_file = open(self.file_name, 'w')
+        #output_file = open(self.file_name, 'w')
         while True:
             data=self.listener_socket.recv(1024)
+            self.output_file = open(self.file_name, 'a')
             msg=Message()
             msg.build_by_data(data)
-            output_file.write(str(datetime.datetime.now()))
-            output_file.write('\t')
-            output_file.write(msg.__str__())
-            output_file.write('\n')
+            self.output_file.write(str(datetime.datetime.now()))
+            self.output_file.write('\t')
+            self.output_file.write(msg.__str__())
+            print(msg.__str__())
             #if MESSAGE_TYPE[msg.type] == 'Exit':
             #    break
-            if self.handle(msg) is None:
+            if self.handle(msg) == -1:
+                self.output_file.close()
                 break
-            #TODO Message Handler
+            self.output_file.close()
         self.listener_socket.close()
-        output_file.close()
+        self.output_file.close()
         print('Listener closed')
 
     def handle(self, msg):
         if MESSAGE_TYPE[msg.type] == 'Exit':
-            return None
+            self.output_file.write('\tProgram terminated\n')
+            return -1
         else:
             if msg.owner_id in self.rec_msgs:
+                self.output_file.write('\tDrop the message\n')
                 return 0
+            self.output_file.write('\tMessage broadcast\n')
             self.rec_msgs.append(msg.owner_id)
-            self.net.send.broadcast(msg.get_packed())
+            self.net.broadcast(msg.get_packed())

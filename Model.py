@@ -7,9 +7,6 @@ last_id = 0
 class Message():
     def __init__(self, my_id='0', msg_type=0, content=''):
         self.type = msg_type
-        my_id += '_'
-        my_id += str(last_id)
-        last_id += 1
         self.owner_id = str(my_id)
         self.id_len = len(str(my_id))
         self.msg_len = len(str(content))
