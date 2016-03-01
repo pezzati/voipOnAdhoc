@@ -1,4 +1,4 @@
-from apparmor.ui import raw_input
+#from apparmor.ui import raw_input
 from Network import *
 from Model import *
 import sys
@@ -15,12 +15,12 @@ listener.start()
 
 id_generate = ID_info(0)
 while True:
-    cmd = raw_input()
+    cmd = input()
     if cmd != 'Exit':
-        msg = Message(id_generate(main_id), msg_type=1, content=cmd)
+        msg = Message(id_generate.build_id(main_id), msg_type=1, content=cmd)
         net.broadcast(msg.get_packed())
     else:
-        msg = Message(id_generate(main_id), msg_type=0, content=cmd)
+        msg = Message(id_generate.build_id(main_id), msg_type=0, content=cmd)
         net.broadcast(msg.get_packed())
         break
 net.terminate()
