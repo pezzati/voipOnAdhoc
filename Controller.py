@@ -17,10 +17,14 @@ id_generate = ID_info(0)
 while True:
     cmd = input()
     if cmd != 'Exit':
-        msg = Message(id_generate.build_id(main_id), msg_type=1, content=cmd)
+        temp_id = id_generate.build_id(main_id)
+        msg = Message(temp_id, msg_type=1, content=cmd)
+        listener.add_id(temp_id)
         net.broadcast(msg.get_packed())
     else:
-        msg = Message(id_generate.build_id(main_id), msg_type=0, content=cmd)
+        temp_id = id_generate.build_id(main_id)
+        msg = Message(temp_id, msg_type=0, content=cmd)
+        listener.add_id(temp_id)
         net.broadcast(msg.get_packed())
         break
 net.terminate()

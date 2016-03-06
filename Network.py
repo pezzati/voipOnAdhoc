@@ -91,3 +91,6 @@ class Listener(threading.Thread):
             self.output_file.write('\tMessage broadcast\n')
             self.rec_msgs.append(msg.owner_id)
             self.net.broadcast(msg.get_packed())
+
+    def add_id(self, msg_id):
+        self.rec_msgs.append(msg_id)
