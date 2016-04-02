@@ -16,3 +16,4 @@ gradle-app.setting
 *.idea
 .log
 *.log
+*.pyc

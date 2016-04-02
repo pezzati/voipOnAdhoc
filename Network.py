@@ -50,6 +50,10 @@ class Listener(threading.Thread):
         time = time.replace(' ', '_')
         self.file_name += time
         self.file_name += '.log'
+        self.output_file = open(self.file_name, 'w')
+        self.output_file.close()
+
+        self.terminate = False
 
         self.port = port_num
         self.listener_socket = socket(AF_INET, SOCK_DGRAM)
@@ -62,9 +66,9 @@ class Listener(threading.Thread):
     def run(self):
         #output_file = open(self.file_name, 'w')
         while True:
-            data=self.listener_socket.recv(1024)
+            data = self.listener_socket.recv(1024)
             self.output_file = open(self.file_name, 'a')
-            msg=Message()
+            msg = Message()
             msg.build_by_data(data)
             self.output_file.write(str(datetime.datetime.now()))
             self.output_file.write('\t')
@@ -82,15 +86,19 @@ class Listener(threading.Thread):
 
     def handle(self, msg):
         if MESSAGE_TYPE[msg.type] == 'Exit':
+            print('Exit received, see you later. Press Enter to exit.')
+            self.terminate = True
             self.output_file.write('\tProgram terminated\n')
             return -1
-        else:
-            if msg.owner_id in self.rec_msgs:
+        if MESSAGE_TYPE[msg.type] == 'Text':
+            if msg.packet_id in self.rec_msgs:
                 self.output_file.write('\tDrop the message\n')
                 return 0
             self.output_file.write('\tMessage broadcast\n')
-            self.rec_msgs.append(msg.owner_id)
+            self.rec_msgs.append(msg.packet_id)
             self.net.broadcast(msg.get_packed())
+            return 0
+        #if MESSAGE_TYPE[msg.type] == 'Routing':
 
     def add_id(self, msg_id):
         self.rec_msgs.append(msg_id)
