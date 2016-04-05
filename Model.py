@@ -1,7 +1,7 @@
 from struct import pack
 import struct
 
-MESSAGE_TYPE = {0: 'Exit', 1: 'Text', 2: 'Routing'}
+MESSAGE_TYPE = {0: 'Exit', 1: 'Text', 2: 'ARP'}
 BROADCAST = 255
 last_id = 0
 
@@ -13,33 +13,59 @@ class Message():
         self.src_id = src_id
         #self.scr_id_len = len(str(src_id))
         self.dst_id = dst_id
+        self.target_id = dst_id
         #self.dst_id_len = len(self.dst_id)
         self.status = status
         self.msg_len = len(str(content))
-        self.payload = str(content)
+        self.payload = content
+        self.ttl = 255
+        self.asker = self.src_id
 
     def get_packed(self):
-        data = pack('!IBBBBH', self.packet_id, self.type, self.src_id, self.dst_id, self.status, self.msg_len)
-        data += self.payload.encode('utf-8')
+        if MESSAGE_TYPE[self.type] != 'ARP':
+            data = pack('!IBBBBH', self.packet_id, self.type, self.src_id, self.dst_id, self.status, self.msg_len)
+            data += str(self.payload).encode('utf-8')
+        else:
+            #if self.status == 0:
+            data = pack('!IBBBBBBB', self.packet_id, self.type, self.src_id, BROADCAST, self.status, self.ttl,
+                        self.asker, self.target_id)
+            #if self.status == 1:
+            #    data = pack('!IBBBBBBB', self.packet_id, self.type, self.src_id, BROADCAST, self.status, self.ttl,
+            #                self.target_id, self.asker)
         return data
 
     def build_by_data(self, data):
-        header = data[:10]
-        packet_id, msg_type, source, dst, sts, length = struct.unpack('!IBBBBH', header)
-        body = data[10:10 + length]
-        #print(body.decode('utf-8'))
-        self.type = msg_type
-        self.msg_len = length
-        self.src_id = source
-        #self.scr_id_len = src_id_length
-        self.dst_id = dst
-        #self.dst_id_len = dst_id_length
-        self.status = sts
-        self.payload = body.decode('utf-8')
-        #return Message(owner_id.decode("utf-8"), msg_type, body.decode('utf-8'))
+        top_header = data[:6]
+        packet_id, msg_type = struct.unpack('!IB', top_header)
+        if MESSAGE_TYPE[msg_type] == 'ARP':
+            header = data[6:11]
+            source, dst, sts, ttl, asker, target = struct.unpack('!BBBBBB', header)
+            self.type = msg_type
+            self.src_id = source
+            self.dst_id = dst
+            self.status = sts
+            self.ttl = ttl
+            self.asker = asker
+            self.target_id = target
+        else:
+            header = data[6:10]
+            source, dst, sts, length = struct.unpack('!BBBH', header)
+            body = data[10:10 + length]
+            #print(body.decode('utf-8'))
+            self.type = msg_type
+            self.msg_len = length
+            self.src_id = source
+            #self.scr_id_len = src_id_length
+            self.dst_id = dst
+            #self.dst_id_len = dst_id_length
+            self.status = sts
+            self.payload = body.decode('utf-8')
+            #return Message(owner_id.decode("utf-8"), msg_type, body.decode('utf-8'))
 
     def __str__(self):
-        return '{} message from {}: {}'.format(MESSAGE_TYPE[self.type], self.src_id, self.payload)
+        if MESSAGE_TYPE[self.type] != 'ARP':
+            return '{} message from {}: {}'.format(MESSAGE_TYPE[self.type], self.src_id, self.payload)
+        return 'Who knows where is {}? Tell {}'.format(self.dst_id, self.src_id)
 
 
 class IDInfo():
@@ -52,3 +78,26 @@ class IDInfo():
         res += self.base_id
         self.base_id += 1
         return res
+
+
+class RoutingNode(object):
+    def __init__(self, source, destination, ttl, next):
+        #self.target = target
+        #self.asker = asker
+        #self.ttl_asker = ttl_asker
+        #self.ttl_target = ttl_target
+        #self.next_asker = next_asker
+        #self.next_target = next_target
+        self.src = source
+        self.dst = destination
+        self.ttl = ttl
+        self.next = next
+
+
+#
+#class RoutingTempNode(object):
+#    def __init__(self, target, ttl, tells):
+#        self.target = target
+#        self.asker
+#        self.ttl = ttl
+#        self.tells = tells

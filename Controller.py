@@ -14,6 +14,12 @@ listener = Listener(name='listener', port_num=main_port, my_id=main_id, network=
 listener.start()
 
 id_generate = IDInfo(0)
+
+
+def get_id():
+    return id_generate.build_id(main_id)
+
+
 while True:
     if listener.terminate:
         break
@@ -25,12 +31,12 @@ while True:
         cmd_array = cmd.split(' ')
         dst = cmd_array[0]
         msg = cmd_array[1]
-        temp_id = id_generate.build_id(main_id)
+        temp_id = get_id()
         msg = Message(packet_id=temp_id, msg_type=1, src_id=main_id, dst_id=dst, content=cmd)
         listener.add_id(temp_id)
         net.broadcast(msg.get_packed())
     else:
-        temp_id = id_generate.build_id(main_id)
+        temp_id = get_id()
         msg = Message(packet_id=temp_id, msg_type=0, src_id=main_id, dst_id=BROADCAST, content=cmd)
         listener.add_id(temp_id)
         net.broadcast(msg.get_packed())
