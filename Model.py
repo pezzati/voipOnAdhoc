@@ -51,16 +51,12 @@ class Message():
             header = data[6:10]
             source, dst, sts, length = struct.unpack('!BBBH', header)
             body = data[10:10 + length]
-            #print(body.decode('utf-8'))
             self.type = msg_type
             self.msg_len = length
             self.src_id = source
-            #self.scr_id_len = src_id_length
             self.dst_id = dst
-            #self.dst_id_len = dst_id_length
             self.status = sts
             self.payload = body.decode('utf-8')
-            #return Message(owner_id.decode("utf-8"), msg_type, body.decode('utf-8'))
 
     def __str__(self):
         if MESSAGE_TYPE[self.type] != 'ARP':

@@ -8,13 +8,14 @@ from Controller import get_id
 #import socket
 
 Routing_table = {}
-Routing_temp_table = {}
+ARP_QUEUE = {}
 
 
 def standard_tuple(arg1, arg2):
     if arg1 > arg2:
         return (arg2,arg1)
     return (arg1,arg2)
+
 
 
 class Network():
@@ -91,6 +92,7 @@ class Listener(threading.Thread):
                 self.output_file.close()
                 break
             self.output_file.close()
+
         self.listener_socket.close()
         self.output_file.close()
         print('Listener closed')
@@ -136,8 +138,7 @@ class Listener(threading.Thread):
                             msg.dst_id = msg.src_id
                             msg.src_id = self.node_id
                             msg.status = 1
-                            self.rec_msgs.append(msg.packet_id)
-                            self.net.broadcast(msg.get_packed())
+                            self.send_msg(msg)
                             self.output_file.write('\tARP response sent to {} for asker {}\n'.format(msg.src_id,
                                                                                                      msg.asker))
                         return 0
@@ -152,8 +153,7 @@ class Listener(threading.Thread):
                     msg.target_id = msg.asker
                     msg.asker = temp
                     msg.status = 1
-                    self.rec_msgs.append(msg.packet_id)
-                    self.net.broadcast(msg.get_packed())
+                    self.send_msg(msg)
                     self.output_file.write('\tNew ARP answer sent to {} for asker \n'.format(msg.dst_id, msg.asker))
                     return 0
                 #broadcast the ARP
@@ -173,13 +173,12 @@ class Listener(threading.Thread):
                                                                    ttl=msg.ttl, next=-1)
                         Routing_table[reverse_tuple] = RoutingNode(source=msg.target_id, destination=msg.asker,
                                                                    ttl=-1, next=msg.src_id)
-                        self.output_file.write('\tNew ARP request with ttl {} broadcast for {}'.format(msg.ttl - 1,
+                        self.output_file.write('\tNew ARP request with ttl {} broadcast for {}\n'.format(msg.ttl - 1,
                                                                                                        msg.target_id))
                     msg.packet_id = get_id()
                     msg.ttl -= 1
                     msg.src_id = self.node_id
-                    self.rec_msgs.append(msg.packet_id)
-                    self.net.broadcast(msg.get_packed())
+                    self.send_msg(msg)
                     return 0
             #ARP response
             if msg.status == 1:
@@ -188,21 +187,23 @@ class Listener(threading.Thread):
                     #Reveived it before
                     if reverse_tuple in Routing_table:
                         if Routing_table[reverse_tuple]. ttl >= msg.ttl:
-                            self.output_file.write('\tARP response with ttl {} DROPPED'.format(msg.ttl))
+                            self.output_file.write('\tARP response with ttl {} DROPPED\n'.format(msg.ttl))
                             return 0
                         else:
-                            self.output_file.write('\tARP response with ttl {} accepted'.format(msg.ttl))
+                            self.output_file.write('\tARP response with ttl {} accepted\n'.format(msg.ttl))
                             Routing_table[reverse_tuple].ttl = msg.ttl
                             Routing_table[reverse_tuple].next = msg.src_id
-                            return 0
+                            self.send_arp_queue(msg.asker)
+                            return 1
                     else:
-                        self.output_file.write('\tNew ARP response with ttl {} accepted'.format(msg.ttl))
+                        self.output_file.write('\tNew ARP response with ttl {} accepted\n'.format(msg.ttl))
                         Routing_table[reverse_tuple] = RoutingNode(source=msg.target_id, destination=msg.asker,
                                                                    ttl=msg.ttl, next=msg.src_id)
-                        return 0
+                        self.send_arp_queue(msg.asker)
+                        return 1
                 else:
                     if typical_tuple not in Routing_table:
-                        self.output_file.write('\tWrong ARP DROPPED')
+                        self.output_file.write('\tWrong ARP DROPPED\n')
                         return 0
                     if msg.ttl > Routing_table[typical_tuple].ttl:
                         Routing_table[reverse_tuple].next = msg.src_id
@@ -213,11 +214,19 @@ class Listener(threading.Thread):
                         msg.src_id = self.node_id
                         msg.dst_id = Routing_table[typical_tuple].next
 
-                        self.output_file.write('\tARP response with ttl {} accepted and tell {}'.format(msg.ttl,
-                                                                                                        msg.dst_id))
-                        self.rec_msgs.append(msg.packet_id)
-                        self.net.broadcast(msg.get_packed())
+                        self.output_file.write('\tARP response with ttl {} accepted and tell {}\n'.format(msg.ttl,
+                                                                                                          msg.dst_id))
+                        self.send_msg(msg)
                         return 0
 
     def add_id(self, msg_id):
         self.rec_msgs.append(msg_id)
+
+    def send_msg(self, msg):
+        self.add_id(msg.packet_id)
+        self.net.broadcast(msg)
+
+    def send_arp_queue(self, dst):
+        if dst not in ARP_QUEUE or len(ARP_QUEUE) == 0:
+            return
+        self.send_msg(ARP_QUEUE[dst][0])

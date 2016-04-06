@@ -29,12 +29,19 @@ while True:
     if cmd != 'Exit' and cmd != 'exit':
         #cmd pattern <dst id> <msg>
         cmd_array = cmd.split(' ')
-        dst = cmd_array[0]
+        dst = int(cmd_array[0])
         msg = cmd_array[1]
+
+        msg = Message(packet_id=get_id(), msg_type=1, src_id=main_id, dst_id=dst, content=cmd)
+        if dst in ARP_QUEUE:
+            ARP_QUEUE[dst].append(msg)
+        else:
+            ARP_QUEUE[dst] = [msg]
+
         temp_id = get_id()
-        msg = Message(packet_id=temp_id, msg_type=1, src_id=main_id, dst_id=dst, content=cmd)
+        arp_msg = Message(packet_id=temp_id, msg_type=2, src_id=main_id, dst_id=dst)
         listener.add_id(temp_id)
-        net.broadcast(msg.get_packed())
+        net.broadcast(arp_msg.get_packed())
     else:
         temp_id = get_id()
         msg = Message(packet_id=temp_id, msg_type=0, src_id=main_id, dst_id=BROADCAST, content=cmd)
